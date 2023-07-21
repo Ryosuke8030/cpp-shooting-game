@@ -5,6 +5,7 @@
 #include <time.h>
 #include <curses.h>
 #include "game.h"
+#include <windows.h>
 
 const char* tileAA[TILE_MAX] = {
     " ",    // TILE_NONE
@@ -31,27 +32,29 @@ int starCount;
 Timer timer;//ゲーム時間のタイマー
 int score = 0;
 
-/*void get_iniDirectoriy(char* ini_filename1, char* ini_filename2, char* ini_filename3) {
+const char* get_iniDirectory() {
+    static char ini_filename[CHARBUFF];
     char section[CHARBUFF];
-    char keyword1[CHARBUFF];
-    char keyword2[CHARBUFF];
-    char keyword3[CHARBUFF];
+    char keyword[CHARBUFF];
     char currentDirectory[CHARBUFF];
     GetCurrentDirectory(CHARBUFF, currentDirectory);
 
     sprintf_s(section, "section1");
-    sprintf_s(keyword1, "keyword1");
-    sprintf_s(keyword2, "keyword2");
-    sprintf_s(keyword3, "keyword3");
-    char settingfile[CHARBUFF];
-    sprintf_s(settingfile, "%s\\setting.ini", currentDirectory);
+    sprintf_s(keyword, "keyword1");
+    char settingFile[CHARBUFF];
+    sprintf_s(settingFile, "%s\\setting.ini", currentDirectory);
+ 
+    //読み込み
+    if (GetPrivateProfileString(section, keyword, "none",ini_filename, CHARBUFF, settingFile) != 0) {
 
-    GetPrivateProfileString(section, keyword1, "none", ini_filename1, CHARBUFF, settingfile);
-    GetPrivateProfileString(section, keyword2, "none", ini_filename2, CHARBUFF, settingfile);
-    GetPrivateProfileString(section, keyword3, "none", ini_filename3, CHARBUFF, settingfile);
+        return ini_filename;
+    }
+    else {
+        fprintf_s(stdout, "%s dosen't contain [%s] %s\n", settingFile, section, keyword);
+    }
 }
 
-void reeadCSV(const char* filename, int score[10]) {
+/*void reeadCSV(const char* filename, int score[10]) {
     FILE* fp;
     char line[BUFFSIZE];
     char* token;
@@ -98,7 +101,14 @@ void reeadCSV(const char* filename, int score[10]) {
 void DrawStartScreen() {
     clear();
     mvprintw(SCREEN_HEIGHT / 2 - 2, (SCREEN_WIDTH - 20) / 2, "Shooting Game");
-    mvprintw(SCREEN_HEIGHT / 2, (SCREEN_WIDTH - 17) / 2, "Press sny key");
+    mvprintw(SCREEN_HEIGHT / 2, (SCREEN_WIDTH - 17) / 2, "Press space key");
+    refresh();
+}
+
+void DrawEndScreen() {
+    clear();
+    mvprintw(SCREEN_HEIGHT / 2 - 2, (SCREEN_WIDTH - 20) / 2, "Game Over!");
+    mvprintw(SCREEN_HEIGHT / 2, (SCREEN_WIDTH - 17) / 2, "Score : %d", score);
     refresh();
 }
 
@@ -152,6 +162,9 @@ void Init() {//ゲーム初期化関数
     for (int x = 0; x < STAR_COLUMN; x++)
         starBullet[x].isFired = false;
 
+    timer.start = time(NULL);
+    timer.current = timer.start;
+
     DrawScreen();
 }
 
@@ -161,6 +174,7 @@ bool playerBulletIntersectStars() {
             if ((!stars[y][x].isHit) && (stars[y][x].x == playerBullet.x) && (stars[y][x].y == playerBullet.y)) {
                 stars[y][x].isHit = true;
                 playerBullet.isFired = false;
+                score++;
                 return true;
             }
         }
@@ -178,6 +192,8 @@ bool starBulletIntersectPlayer() {
 }
 
 void UpdateGame() {
+
+    updateTimer(&timer);
 
     if (playerBullet.isFired) {
         playerBullet.y--;
@@ -253,8 +269,9 @@ void UpdateGame() {
     }
 
     if (starBulletIntersectPlayer()) {
-        Init();
-        return;
+        while (1) {
+            DrawEndScreen();
+        }
     }
 }
 

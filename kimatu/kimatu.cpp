@@ -7,7 +7,6 @@
 #include "game.h"
 
 int main() {
-    //srand(time(NULL));
 
     //初期化設定
     initscr();
@@ -29,7 +28,7 @@ int main() {
 
     clock_t lastClock = clock();
 
-    while (!TimerExpired(&timer)) {
+    while (1) {
         clock_t nowClock = clock();
 
         if (nowClock >= lastClock + INTERVAL) {//球と敵の移動時間に差を生ませる
@@ -70,11 +69,17 @@ int main() {
             continue;
         }
 
+        if (TimerExpired(&timer))
+            break;
+
         DrawScreen();
     }
 
+    while (1) {
+        DrawEndScreen();
+    }
+
     endwin();
-    mvprintw(SCREEN_HEIGHT / 2 - 2, (SCREEN_WIDTH - 20) / 2, "TIME UP!");
-    mvprintw(SCREEN_HEIGHT / 2, (SCREEN_WIDTH - 17) / 2, "Your Score : ");
+    
     return 0;
 }

@@ -15,7 +15,7 @@
 #define RANKING 5
 #define RESULTS 2
 
-#define GAMETIME 30
+#define GAMETIME 50
 enum {
     TILE_NONE,          // ‰æ–Ê‚É‰½‚à–³‚¢
     TILE_STAR,
@@ -74,6 +74,7 @@ extern int score;
 
 
 void DrawStartScreen();
+void DrawEndScreen();
 void Init();
 void DrawScreen();
 void UpdateGame();
