@@ -28,7 +28,81 @@ PLAYER_BULLET playerBullet;
 STAR_BULLET starBullet[STAR_COLUMN];
 int starDirection;
 int starCount;
+Timer timer;//ゲーム時間のタイマー
+int score = 0;
 
+/*void get_iniDirectoriy(char* ini_filename1, char* ini_filename2, char* ini_filename3) {
+    char section[CHARBUFF];
+    char keyword1[CHARBUFF];
+    char keyword2[CHARBUFF];
+    char keyword3[CHARBUFF];
+    char currentDirectory[CHARBUFF];
+    GetCurrentDirectory(CHARBUFF, currentDirectory);
+
+    sprintf_s(section, "section1");
+    sprintf_s(keyword1, "keyword1");
+    sprintf_s(keyword2, "keyword2");
+    sprintf_s(keyword3, "keyword3");
+    char settingfile[CHARBUFF];
+    sprintf_s(settingfile, "%s\\setting.ini", currentDirectory);
+
+    GetPrivateProfileString(section, keyword1, "none", ini_filename1, CHARBUFF, settingfile);
+    GetPrivateProfileString(section, keyword2, "none", ini_filename2, CHARBUFF, settingfile);
+    GetPrivateProfileString(section, keyword3, "none", ini_filename3, CHARBUFF, settingfile);
+}
+
+void reeadCSV(const char* filename, int score[10]) {
+    FILE* fp;
+    char line[BUFFSIZE];
+    char* token;
+    char* next_token;
+    int row = 0, column = 0; //行, 列
+
+    errno_t error;
+
+    error = fopen_s(&fp, filename, "r");
+    if (error != 0) {
+        fprintf_s(stderr, "failed to open\n");
+    }
+    else {
+        //取得した文字列がNULLではないかつ列が5を超えるまで繰り返す(配列は0から5番目まで)
+        while (fgets(line, BUFFSIZE, fp) != NULL && row < RANKING + 1) {//fgetsはfpの中身をlineに文字列のアドレスとして返す
+
+            column = 0;
+            if (row != 0) {
+                //strtok(分割する文字列, 区切り文字) 区切った最初の要素をchar型で返す
+                token = strtok_s(line, ",", &next_token);//next_tokenには区切った次の配列のポインタが入る
+
+                //strtokは分割が終了するとNULLを返すのでNULLになるまでかつ列が2未満の場合繰り返す
+                while (token != NULL && column < RESULTS + 1) {
+
+                    if (column != 0) {
+                        data[row - 1][column - 1] = strtod(token, NULL);// tokenにある文字列をdouble型に変換して格納
+                    }
+
+                    //strtokの第1引数にNULLを指定すると前回の呼び出しアドレスから始まる
+                    token = strtok_s(NULL, ",", &next_token);//NULLの部分が前のnext_tokenのポインタを自然と参照してくれる
+
+
+                    column++;
+                }
+            }
+            row++;
+        }
+
+        fclose(fp); // ファイルを閉じる
+    }
+}*/
+
+
+void DrawStartScreen() {
+    clear();
+    mvprintw(SCREEN_HEIGHT / 2 - 2, (SCREEN_WIDTH - 20) / 2, "Shooting Game");
+    mvprintw(SCREEN_HEIGHT / 2, (SCREEN_WIDTH - 17) / 2, "Press sny key");
+    refresh();
+}
+
+//ゲーム画面をターミナルに描画
 void DrawScreen() {
     clear();
     for (int y = 0; y < STAR_ROW; y++) {//星の描画
@@ -47,6 +121,8 @@ void DrawScreen() {
             mvaddstr(starBullet[x].y, starBullet[x].x, tileAA[TILE_STAR_BULLET]);
     }
 
+    mvprintw(LINES - 1, 0, "Score: %d", score);
+    mvprintw(LINES - 1, COLS - 10, "Time: %ld", GAMETIME - (timer.current - timer.start));
     refresh();
 }
 
@@ -102,6 +178,7 @@ bool starBulletIntersectPlayer() {
 }
 
 void UpdateGame() {
+
     if (playerBullet.isFired) {
         playerBullet.y--;
         if (playerBullet.y < 0)
@@ -179,4 +256,12 @@ void UpdateGame() {
         Init();
         return;
     }
+}
+
+void updateTimer(struct Timer* timer) {
+    timer->current = time(NULL);
+}
+
+int TimerExpired(struct Timer* timer) {
+    return timer->current - timer->start >= GAMETIME;
 }

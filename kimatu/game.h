@@ -9,6 +9,13 @@
 #define STAR_COLUMN 11
 #define STAR_ROW 5
 
+#define CHARBUFF 124
+#define BUFFSIZE 1024
+
+#define RANKING 5
+#define RESULTS 2
+
+#define GAMETIME 30
 enum {
     TILE_NONE,          // 画面に何も無い
     TILE_STAR,
@@ -48,6 +55,11 @@ typedef struct {
     bool isFired;
 } STAR_BULLET;
 
+struct Timer {
+    time_t start;
+    time_t current;
+};
+
 
 //構造体、変数宣言 呼び出しはgame.cで2重定義とならない為にexternを使う
 extern int screen[SCREEN_HEIGHT][SCREEN_WIDTH];
@@ -57,12 +69,16 @@ extern PLAYER_BULLET playerBullet;
 extern STAR_BULLET starBullet[STAR_COLUMN];
 extern int starDirection;//星の進行族度
 extern int starCount;//星の移動速度を球と変化させる為
+extern Timer timer;
+extern int score;
 
 
-
+void DrawStartScreen();
 void Init();
 void DrawScreen();
 void UpdateGame();
 bool playerBulletIntersectStars();
 bool starBulletIntersectPlayer();
+void updateTimer(struct Timer* timer);
+int TimerExpired(struct Timer* timer);
 
