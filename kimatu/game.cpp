@@ -29,10 +29,12 @@ PLAYER_BULLET playerBullet;
 STAR_BULLET starBullet[STAR_COLUMN];
 int starDirection;
 int starCount;
+char ini_playername[BUFFSIZE];
+RESULT result[5];
 Timer timer;//ゲーム時間のタイマー
 int score = 0;
 
-const char* get_iniDirectory() {
+void get_iniDirectory(char* ini_playername) {
     static char ini_filename[CHARBUFF];
     char section[CHARBUFF];
     char keyword[CHARBUFF];
@@ -45,25 +47,19 @@ const char* get_iniDirectory() {
     sprintf_s(settingFile, "%s\\setting.ini", currentDirectory);
  
     //読み込み
-    if (GetPrivateProfileString(section, keyword, "none",ini_filename, CHARBUFF, settingFile) != 0) {
-
-        return ini_filename;
-    }
-    else {
-        fprintf_s(stdout, "%s dosen't contain [%s] %s\n", settingFile, section, keyword);
-    }
+    GetPrivateProfileString(section, keyword, "none", ini_playername, CHARBUFF, settingFile);
 }
 
-/*void reeadCSV(const char* filename, int score[10]) {
+void readCSV(struct RESULT result[]) {
     FILE* fp;
     char line[BUFFSIZE];
-    char* token;
+    char* token = NULL;
     char* next_token;
     int row = 0, column = 0; //行, 列
 
     errno_t error;
 
-    error = fopen_s(&fp, filename, "r");
+    error = fopen_s(&fp, "result_data.csv", "r");
     if (error != 0) {
         fprintf_s(stderr, "failed to open\n");
     }
@@ -79,15 +75,19 @@ const char* get_iniDirectory() {
                 //strtokは分割が終了するとNULLを返すのでNULLになるまでかつ列が2未満の場合繰り返す
                 while (token != NULL && column < RESULTS + 1) {
 
-                    if (column != 0) {
-                        data[row - 1][column - 1] = strtod(token, NULL);// tokenにある文字列をdouble型に変換して格納
+                    if (column == 1) {
+                        strcpy_s(result[row - 1].playername, token);
+                    }
+
+                    if (column == 2) {
+                        result[row - 1].playerscore = atoi(token);// tokenにある文字列をint型に変換して格納
                     }
 
                     //strtokの第1引数にNULLを指定すると前回の呼び出しアドレスから始まる
                     token = strtok_s(NULL, ",", &next_token);//NULLの部分が前のnext_tokenのポインタを自然と参照してくれる
 
-
                     column++;
+
                 }
             }
             row++;
@@ -95,20 +95,79 @@ const char* get_iniDirectory() {
 
         fclose(fp); // ファイルを閉じる
     }
-}*/
+}
+
+void compareScores(struct RESULT result[]) {
+    int i, j;
+    for (i = 0; i < RANKING - 1; i++) {
+        for (j = 0; j < RANKING - i - 1; j++) {
+            if (result[j].playerscore < result[j + 1].playerscore) {
+                // プレイヤースコアを交換
+                int tempScore = result[j].playerscore;
+                result[j].playerscore = result[j + 1].playerscore;
+                result[j + 1].playerscore = tempScore;
+
+                // プレイヤー名を交換
+                char tempName[CHARBUFF];
+                strcpy_s(tempName, CHARBUFF, result[j].playername);
+                strcpy_s(result[j].playername, CHARBUFF, result[j + 1].playername);
+                strcpy_s(result[j + 1].playername, CHARBUFF, tempName);
+            }
+        }
+    }
+}
+
+void writeCSV(struct RESULT result[]) {
+    FILE* fp;
+    char buffer[BUFFSIZE];
+
+    errno_t error;
+    error = fopen_s(&fp, "result_data.csv", "w");
+
+    if (error != 0) {
+        fprintf_s(stderr, "failed to open");
+    }
+    else {
+        fputs("ランキング,プレイヤー,スコア\n", fp);
+
+        for (int i = 0; i < RANKING; i++) {
+            fprintf(fp, "%d,", i + 1);
+            fputs(result[i].playername, fp);
+            snprintf(buffer, sizeof(buffer), ",%d,", result[i].playerscore);
+            fputs(buffer, fp);
+            fputs("\n", fp);
+        }
+        fclose(fp);
+    }
+
+}
 
 
-void DrawStartScreen() {
+void DrawStartScreen(char *ini_playername, struct RESULT result[]) {
     clear();
-    mvprintw(SCREEN_HEIGHT / 2 - 2, (SCREEN_WIDTH - 20) / 2, "Shooting Game");
-    mvprintw(SCREEN_HEIGHT / 2, (SCREEN_WIDTH - 17) / 2, "Press space key");
+    mvprintw(SCREEN_HEIGHT / 2 - 10, (SCREEN_WIDTH - 17) / 2, "Shooting Game!");
+    mvprintw(SCREEN_HEIGHT / 2 - 8, (SCREEN_WIDTH - 17) / 2, "Press space key");
+    mvprintw(SCREEN_HEIGHT / 2 - 6, (SCREEN_WIDTH - 20) / 2, "Playername : %s", ini_playername);
+    mvprintw(SCREEN_HEIGHT / 2 - 2, (SCREEN_WIDTH - 15) / 2, "Ranking");
+
+    int j = 0;
+    for (int i = 0; i < 5; i++) {
+        mvprintw(SCREEN_HEIGHT / 2 + j, (SCREEN_WIDTH - 18) / 2, "%s  :  %d\n", result[i].playername, result[i].playerscore);
+        j += 2;
+    }
     refresh();
 }
 
-void DrawEndScreen() {
+void DrawEndScreen(char* ini_playername, struct RESULT result[]) {
     clear();
+
+    strcpy_s(result[0].playername, ini_playername);
+    result[0].playerscore = score;
+
     mvprintw(SCREEN_HEIGHT / 2 - 2, (SCREEN_WIDTH - 20) / 2, "Game Over!");
     mvprintw(SCREEN_HEIGHT / 2, (SCREEN_WIDTH - 17) / 2, "Score : %d", score);
+    mvprintw(SCREEN_HEIGHT / 2 + 2, (SCREEN_WIDTH - 17) / 2, "Press space key");
+
     refresh();
 }
 
@@ -269,9 +328,18 @@ void UpdateGame() {
     }
 
     if (starBulletIntersectPlayer()) {
+        int ch4;
         while (1) {
-            DrawEndScreen();
+            DrawEndScreen(ini_playername, result);
+            ch4 = getch();
+            if (ch4 == ' ')
+                break;
         }
+        compareScores(result);
+
+        writeCSV(result);
+
+        endwin();
     }
 }
 

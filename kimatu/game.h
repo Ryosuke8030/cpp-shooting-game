@@ -15,7 +15,7 @@
 #define RANKING 5
 #define RESULTS 2
 
-#define GAMETIME 50
+#define GAMETIME 20
 enum {
     TILE_NONE,          // 画面に何も無い
     TILE_STAR,
@@ -55,6 +55,11 @@ typedef struct {
     bool isFired;
 } STAR_BULLET;
 
+struct RESULT{
+    char playername[BUFFSIZE];
+    int playerscore;
+};
+
 struct Timer {
     time_t start;
     time_t current;
@@ -69,12 +74,17 @@ extern PLAYER_BULLET playerBullet;
 extern STAR_BULLET starBullet[STAR_COLUMN];
 extern int starDirection;//星の進行族度
 extern int starCount;//星の移動速度を球と変化させる為
+extern RESULT result[5];
 extern Timer timer;
+extern char ini_playername[BUFFSIZE];
 extern int score;
 
-
-void DrawStartScreen();
-void DrawEndScreen();
+void get_iniDirectory(char* ini_playername);
+void readCSV(struct RESULT result[]);
+void compareScores(struct RESULT result[]);
+void writeCSV(struct RESULT result[]);
+void DrawStartScreen(char *ini_playername, struct RESULT result[]);
+void DrawEndScreen(char* ini_playername, struct RESULT result[]);
 void Init();
 void DrawScreen();
 void UpdateGame();

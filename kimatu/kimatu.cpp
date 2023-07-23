@@ -8,6 +8,10 @@
 
 int main() {
 
+    get_iniDirectory(ini_playername);
+
+    readCSV(result);
+
     //初期化設定
     initscr();
     curs_set(0);
@@ -15,9 +19,10 @@ int main() {
     nodelay(stdscr, TRUE);
     keypad(stdscr, TRUE);
 
-    DrawStartScreen();
+    DrawStartScreen(ini_playername, result);
 
     int ch1;
+    int ch3;
     while (1) {
         ch1 = getch();
         if (ch1 == ' ')//スペースキーが押されたらループを抜ける
@@ -75,9 +80,17 @@ int main() {
         DrawScreen();
     }
 
+    
     while (1) {
-        DrawEndScreen();
+        DrawEndScreen(ini_playername, result);
+        ch3 = getch();
+        if (ch3 == ' ') {
+            break;
+        }
     }
+    compareScores(result);
+
+    writeCSV(result);
 
     endwin();
     
